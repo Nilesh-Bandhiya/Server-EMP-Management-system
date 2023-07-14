@@ -15,9 +15,17 @@ const uploadEmployees = async (file) => {
     };
     let data = XLSX.utils.sheet_to_json(sheet, options);
 
-    data = data.map((d) => {
-      d.birth_date = moment(new Date(d.birth_date));
-      return d;
+    data = data.map((emp) => {
+      if (emp.salary) {
+        emp.salary = parseFloat(emp.salary); // Parse the value as an integer
+      }
+      if (emp.birth_date) {
+        emp.birth_date = moment(new Date(emp.birth_date)); //formating birth_date
+      }
+      if (emp.joining_date) {
+        emp.joining_date = moment(new Date(emp.joining_date)); //formating joining_date
+      }
+      return emp;
     });
 
     const keys = Object.keys(data[0]);
@@ -39,9 +47,13 @@ const uploadEmployees = async (file) => {
 
     //for add new data
     const assignType = (value) => {
-      if (typeof value === "string") {
-        return "VARCHAR(255) DEFAULT NULL";
-      } else if (!isNaN(value) && Number.isInteger(parseInt(value))) {
+      if (typeof value === "number") {
+        return "DECIMAL DEFAULT NULL";
+      } else if (
+        typeof value === "string" &&
+        !isNaN(value) &&
+        Number.isInteger(parseInt(value))
+      ) {
         return "BIGINT DEFAULT NULL";
       } else {
         return "VARCHAR(255) DEFAULT NULL";
@@ -81,7 +93,9 @@ const uploadEmployees = async (file) => {
 
 const getAllEmployees = async () => {
   try {
-    const response = await sequelize.query('SELECT * FROM "employees"');
+    const response = await sequelize.query(
+      'SELECT * FROM "employees" ORDER BY id ASC'
+    );
     return response[0];
   } catch (error) {
     throw new Error(error);
@@ -99,7 +113,6 @@ const getEmployeeById = async (id) => {
       const response = await sequelize.query(
         `SELECT * FROM "employees" WHERE id=${id}`
       );
-      console.log(response[0]);
       return response[0];
     }
   } catch (error) {
@@ -108,7 +121,12 @@ const getEmployeeById = async (id) => {
 };
 
 const createEmployee = async (data) => {
-  console.log(Object.values(data).toString());
+  if (data.birth_date) {
+    data.birth_date = moment(new Date(data.birth_date));
+  }
+  if (data.joining_date) {
+    data.joining_date = moment(new Date(data.joining_date));
+  }
   try {
     await sequelize.query(
       `INSERT INTO "employees" (${Object.keys(
@@ -123,6 +141,12 @@ const createEmployee = async (data) => {
 };
 
 const updateEmployee = async (data, id) => {
+  if (data.birth_date) {
+    data.birth_date = moment(new Date(data.birth_date));
+  }
+  if (data.joining_date) {
+    data.joining_date = moment(new Date(data.joining_date));
+  }
   try {
     const employee = await sequelize.query(
       `SELECT * FROM "employees" WHERE id = ${id}`
